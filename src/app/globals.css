@@ -146,6 +146,26 @@
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: rgba(168, 85, 247, 0.5);
   }
+
+  /* Word hover glow effect */
+  .word-hover {
+    transition: opacity 0.3s ease, text-shadow 0.3s ease, filter 0.3s ease;
+  }
+
+  .word-hover:hover {
+    text-shadow: 
+      0 0 10px theme('colors.neon.purple'),
+      0 0 20px theme('colors.neon.purple'),
+      0 0 30px theme('colors.neon.purple');
+    filter: brightness(1.2);
+  }
+
+  .text-shadow-glow {
+    text-shadow: 
+      0 0 10px theme('colors.neon.purple'),
+      0 0 20px theme('colors.neon.purple'),
+      0 0 30px theme('colors.neon.purple');
+  }
 }
 
 /* Custom animations */
