@@ -38,7 +38,7 @@ seed().catch((error) => {
     console.error('\n💡 Solution:');
     console.error('1. Use the Connection Pooler URL (recommended):');
     console.error('   Update your .env file to use the pooler URL:');
-    console.error('   DATABASE_URL=postgresql://postgres.xzykezwpknftueypqajk:aitix_db_postgres@aws-1-us-east-2.pooler.supabase.com:6543/postgres');
+    console.error('   DATABASE_URL=postgresql://postgres.xzykezwpknftueypqajk:[password]@aws-1-us-east-2.pooler.supabase.com:6543/postgres');
     console.error('\n2. Or get the correct connection string from Supabase Dashboard:');
     console.error('   - Go to Project Settings > Database');
     console.error('   - Copy the "Connection string" under "Connection pooling"');
