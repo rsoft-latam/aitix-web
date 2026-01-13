@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Calendar, MapPin, Search, Filter, ArrowUpDown, Music2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Music, MapPin, Clock, Zap, Filter, Search } from "lucide-react";
 
 export interface Concert {
-  id: number;
+  id: string;
   artist: string;
   venue: string;
   city: string;
@@ -25,226 +24,249 @@ interface ConcertsSectionProps {
   concerts: Concert[];
 }
 
-type SortOption = "date-asc" | "date-desc" | "price-asc" | "price-desc" | "name-asc";
-
 export function ConcertsSection({ concerts }: ConcertsSectionProps) {
+  const router = useRouter();
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [showAvailableOnly, setShowAvailableOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedGenre, setSelectedGenre] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<SortOption>("date-asc");
+  const [priceSort, setPriceSort] = useState<"none" | "low-to-high" | "high-to-low">("none");
 
-  // Get unique genres
-  const genres = useMemo(() => {
-    const genreSet = new Set(concerts.map((c) => c.genre));
-    return Array.from(genreSet).sort();
-  }, [concerts]);
+  // Get unique genres from concerts
+  const genres = Array.from(new Set(concerts.map((c) => c.genre)));
 
-  // Filter and sort concerts
-  const filteredConcerts = useMemo(() => {
-    let filtered = concerts.filter((concert) => {
-      const matchesSearch = concert.artist.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesGenre = selectedGenre === "all" || concert.genre === selectedGenre;
-      return matchesSearch && matchesGenre;
-    });
+  // Filter concerts based on selected filters
+  let filteredConcerts = concerts.filter((concert) => {
+    const genreMatch =
+      selectedGenres.length === 0 || selectedGenres.includes(concert.genre);
+    const availabilityMatch = !showAvailableOnly || concert.available;
+    const searchMatch =
+      concert.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      concert.venue.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      concert.city.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // Sort concerts
-    filtered = [...filtered].sort((a, b) => {
-      switch (sortBy) {
-        case "date-asc":
-          return new Date(a.date).getTime() - new Date(b.date).getTime();
-        case "date-desc":
-          return new Date(b.date).getTime() - new Date(a.date).getTime();
-        case "price-asc":
-          return a.price - b.price;
-        case "price-desc":
-          return b.price - a.price;
-        case "name-asc":
-          return a.artist.localeCompare(b.artist);
-        default:
-          return 0;
-      }
-    });
+    return genreMatch && availabilityMatch && searchMatch;
+  });
 
-    return filtered;
-  }, [concerts, searchQuery, selectedGenre, sortBy]);
+  // Sort concerts based on price sort option
+  if (priceSort === "low-to-high") {
+    filteredConcerts = [...filteredConcerts].sort((a, b) => a.price - b.price);
+  } else if (priceSort === "high-to-low") {
+    filteredConcerts = [...filteredConcerts].sort((a, b) => b.price - a.price);
+  }
+
+  const handleGetTickets = () => {
+    router.push("/login");
+  };
 
   return (
-    <section id="concerts" className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-      {/* Section Heading */}
-      <div className="text-center mb-12">
-        <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gradient mb-4">
-          Featured Concerts
-        </h2>
-        <p className="text-muted-foreground text-lg">
-          Browse our curated selection of upcoming events
-        </p>
-      </div>
-
-      {/* Search, Filter, and Sort Controls */}
-      <div className="mb-8 space-y-4">
-        {/* Search Bar */}
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search concerts by artist name..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 rounded-xl glass-card border border-white/10 text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-neon-purple/50 focus:border-neon-purple/50 transition-all"
-          />
+    <section id="concerts" className="py-20 md:py-32">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Section Header */}
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-bold text-gradient mb-4">
+            Upcoming Concerts
+          </h2>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Discover amazing concerts and get tickets with AI agents
+          </p>
         </div>
 
-        {/* Filter and Sort Row */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Genre Filter */}
-          <div className="flex-1">
-            <div className="relative">
-              <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <select
-                value={selectedGenre}
-                onChange={(e) => setSelectedGenre(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 rounded-xl glass-card border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-neon-blue/50 focus:border-neon-blue/50 transition-all appearance-none bg-transparent"
-              >
-                <option value="all" className="bg-card">All Genres</option>
-                {genres.map((genre) => (
-                  <option key={genre} value={genre} className="bg-card">
-                    {genre}
-                  </option>
-                ))}
-              </select>
-            </div>
+        {/* Concerts Grid */}
+        <div className="space-y-6">
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search by artist, venue, or city..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-muted-foreground focus:outline-none focus:border-neon-purple/50 transition-all"
+            />
           </div>
 
-          {/* Sort Options */}
-          <div className="sm:w-64">
-            <div className="relative">
-              <ArrowUpDown className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="w-full pl-12 pr-4 py-3 rounded-xl glass-card border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 focus:border-neon-cyan/50 transition-all appearance-none bg-transparent"
-              >
-                <option value="date-asc" className="bg-card">Date: Earliest First</option>
-                <option value="date-desc" className="bg-card">Date: Latest First</option>
-                <option value="price-asc" className="bg-card">Price: Low to High</option>
-                <option value="price-desc" className="bg-card">Price: High to Low</option>
-                <option value="name-asc" className="bg-card">Name: A to Z</option>
-              </select>
+          {/* Filters */}
+          <div className="bg-white/5 backdrop-blur-lg rounded-lg border border-white/10 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Filter className="w-5 h-5 text-neon-purple" />
+              <h3 className="text-lg font-semibold text-white">Filters</h3>
             </div>
-          </div>
-        </div>
 
-        {/* Results Count */}
-        <div className="text-sm text-muted-foreground">
-          Showing {filteredConcerts.length} of {concerts.length} concerts
-        </div>
-      </div>
-
-      {/* Concert Cards Grid */}
-      {filteredConcerts.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-          {filteredConcerts.map((concert) => (
-            <div
-              key={concert.id}
-              className="glass-card rounded-2xl p-6 hover:scale-105 transition-all duration-300 hover:border-neon-purple/50 group relative overflow-hidden"
-            >
-              {/* Gradient overlay on hover */}
-              <div className="absolute inset-0 bg-gradient-to-br from-neon-purple/0 to-neon-blue/0 group-hover:from-neon-purple/5 group-hover:to-neon-blue/5 transition-all duration-300 pointer-events-none" />
-
-              <div className="relative z-10">
-                {/* Concert Image/Icon */}
-                <div className="w-full h-48 bg-gradient-to-br from-neon-purple/20 to-neon-blue/20 rounded-xl flex items-center justify-center mb-4 overflow-hidden">
-                  {concert.image.startsWith("/") ? (
-                    <Image
-                      src={concert.image}
-                      alt={concert.artist}
-                      width={400}
-                      height={200}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-8xl">{concert.image}</span>
-                  )}
+            <div className="space-y-4">
+              {/* Genre Filter */}
+              <div>
+                <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                  Genre
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {genres.map((genre) => (
+                    <button
+                      key={genre}
+                      onClick={() => {
+                        setSelectedGenres((prev) =>
+                          prev.includes(genre)
+                            ? prev.filter((g) => g !== genre)
+                            : [...prev, genre]
+                        );
+                      }}
+                      className={`px-3 py-1 rounded-full text-sm font-medium transition-all ${
+                        selectedGenres.includes(genre)
+                          ? "bg-neon-purple text-white"
+                          : "bg-white/10 text-muted-foreground hover:bg-white/20"
+                      }`}
+                    >
+                      {genre}
+                    </button>
+                  ))}
                 </div>
+              </div>
 
-                {/* Artist Name */}
-                <h3 className="text-2xl font-bold text-white mb-2">{concert.artist}</h3>
+              {/* Price Sort */}
+              <div>
+                <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                  Sort by Price
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setPriceSort("none")}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      priceSort === "none"
+                        ? "bg-neon-purple text-white"
+                        : "bg-white/10 text-muted-foreground hover:bg-white/20"
+                    }`}
+                  >
+                    None
+                  </button>
+                  <button
+                    onClick={() => setPriceSort("low-to-high")}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      priceSort === "low-to-high"
+                        ? "bg-neon-purple text-white"
+                        : "bg-white/10 text-muted-foreground hover:bg-white/20"
+                    }`}
+                  >
+                    Low to High
+                  </button>
+                  <button
+                    onClick={() => setPriceSort("high-to-low")}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      priceSort === "high-to-low"
+                        ? "bg-neon-purple text-white"
+                        : "bg-white/10 text-muted-foreground hover:bg-white/20"
+                    }`}
+                  >
+                    High to Low
+                  </button>
+                </div>
+              </div>
 
-                {/* Genre Badge */}
-                <div className="mb-3">
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-neon-blue/20 text-neon-blue border border-neon-blue/30">
-                    <Music2 className="w-3 h-3" />
-                    {concert.genre}
+              {/* Availability Filter */}
+              <div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showAvailableOnly}
+                    onChange={(e) => setShowAvailableOnly(e.target.checked)}
+                    className="w-4 h-4 rounded"
+                  />
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Available Only
                   </span>
-                </div>
-
-                {/* Venue & Location */}
-                <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                  <MapPin className="w-4 h-4" />
-                  <span className="text-sm">{concert.venue}</span>
-                </div>
-                <div className="text-sm text-muted-foreground mb-1 ml-6">
-                  {concert.city}
-                </div>
-
-                {/* Date & Time */}
-                <div className="flex items-center gap-2 text-muted-foreground mb-4">
-                  <Calendar className="w-4 h-4" />
-                  <span className="text-sm">
-                    {new Date(concert.date).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </span>
-                  <span className="text-sm">• {concert.time}</span>
-                </div>
-
-                {/* Ticket Tier */}
-                <div className="mb-4">
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-neon-purple/20 text-neon-purple border border-neon-purple/30">
-                    {concert.tier}
-                  </span>
-                </div>
-
-                {/* Price */}
-                <div className="flex items-baseline justify-between mb-6">
-                  <div>
-                    <span className="text-3xl font-bold text-white">
-                      ${concert.price}
-                    </span>
-                    <span className="text-muted-foreground text-sm ml-2">
-                      {concert.currency}
-                    </span>
-                  </div>
-                  {concert.available && (
-                    <span className="text-xs text-green-400 bg-green-400/10 px-2 py-1 rounded">
-                      Available
-                    </span>
-                  )}
-                </div>
-
-                {/* Buy Now Button */}
-                <Link
-                  href="/login"
-                  className="w-full block text-center py-3 px-4 rounded-xl bg-gradient-to-r from-neon-purple to-neon-blue text-white font-semibold hover:opacity-90 transition-all duration-300 hover:scale-105"
-                >
-                  Buy Now
-                </Link>
+                </label>
               </div>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-16">
-          <div className="glass-card rounded-2xl p-12 max-w-md mx-auto">
-            <Music2 className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">No concerts found</h3>
-            <p className="text-muted-foreground">
-              Try adjusting your search or filter criteria
-            </p>
           </div>
+
+          {/* Concerts Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredConcerts.length > 0 ? (
+            filteredConcerts.map((concert) => (
+              <div
+                key={concert.id}
+                className="group glass-card rounded-xl overflow-hidden border border-white/10 hover:border-neon-purple/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-neon-purple/20"
+              >
+                {/* Image */}
+                <div className="relative h-48 overflow-hidden bg-gradient-to-br from-neon-purple/20 to-neon-blue/20">
+                  <Image
+                    src={concert.image}
+                    alt={concert.artist}
+                    fill
+                    className="object-cover group-hover:scale-110 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+
+                  {/* Genre Badge */}
+                  <div className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-semibold bg-neon-purple/80 text-white backdrop-blur">
+                    {concert.genre}
+                  </div>
+
+                  {/* Availability Badge */}
+                  {concert.available && (
+                    <div className="absolute bottom-3 left-3 px-3 py-1 rounded-full text-xs font-semibold bg-green-500/80 text-white backdrop-blur flex items-center gap-1">
+                      <Zap className="w-3 h-3" />
+                      Available
+                    </div>
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className="p-6 space-y-4">
+                  {/* Artist Name */}
+                  <h3 className="text-xl font-bold text-white group-hover:text-neon-purple transition-colors">
+                    {concert.artist}
+                  </h3>
+
+                  {/* Venue Info */}
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-neon-purple" />
+                      <span>{concert.venue}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-neon-blue" />
+                      <span>
+                        {concert.date} at {concert.time}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+                  {/* Tier and Price */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-neon-cyan">
+                      {concert.tier}
+                    </span>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-gradient">
+                        ${concert.price}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {concert.currency}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CTA Button */}
+                  <button
+                    onClick={handleGetTickets}
+                    className="w-full mt-4 px-4 py-2 rounded-lg bg-gradient-to-r from-neon-purple to-neon-blue text-white font-semibold hover:opacity-90 transition-all duration-300 hover:shadow-lg hover:shadow-neon-purple/50"
+                  >
+                    Get Tickets
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12">
+              <Music className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <p className="text-muted-foreground">No concerts match your filters</p>
+            </div>
+          )}
         </div>
-      )}
+        </div>
+      </div>
     </section>
   );
 }

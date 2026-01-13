@@ -3,97 +3,11 @@ import Image from "next/image";
 
 import { Music, ArrowRight } from "lucide-react";
 import { ConcertsSection, type Concert } from "@/components/home/concerts-section";
-import heroBackground from "@/Images/Hero-Section-Background.png";
+import { getConcerts } from "@/lib/actions/concerts";
 
-// Sample concert data with genres
-const concerts: Concert[] = [
-  {
-    id: 1,
-    artist: "Ed Sheeran",
-    venue: "Madison Square Garden",
-    city: "New York",
-    date: "2024-03-15",
-    time: "8:00 PM",
-    image: "/EdSheeran.png",
-    price: 89.99,
-    currency: "USDC",
-    tier: "General Admission",
-    available: true,
-    genre: "Pop",
-  },
-  {
-    id: 2,
-    artist: "Taylor Swift",
-    venue: "Staples Center",
-    city: "Los Angeles",
-    date: "2024-04-20",
-    time: "7:30 PM",
-    image: "/Taylor-Swift.png",
-    price: 199.99,
-    currency: "USDC",
-    tier: "VIP",
-    available: true,
-    genre: "Pop",
-  },
-  {
-    id: 3,
-    artist: "Coldplay",
-    venue: "Wembley Stadium",
-    city: "London",
-    date: "2024-05-10",
-    time: "8:00 PM",
-    image: "/Coldplay.png",
-    price: 149.99,
-    currency: "USDC",
-    tier: "Premium",
-    available: true,
-    genre: "Rock",
-  },
-  {
-    id: 4,
-    artist: "The Weeknd",
-    venue: "Mercedes-Benz Stadium",
-    city: "Atlanta",
-    date: "2024-06-05",
-    time: "9:00 PM",
-    image: "/TheWeeknd.png",
-    price: 129.99,
-    currency: "USDC",
-    tier: "General Admission",
-    available: true,
-    genre: "R&B",
-  },
-  {
-    id: 5,
-    artist: "Billie Eilish",
-    venue: "O2 Arena",
-    city: "London",
-    date: "2024-07-12",
-    time: "8:30 PM",
-    image: "/BillieEilish.png",
-    price: 159.99,
-    currency: "USDC",
-    tier: "Premium",
-    available: true,
-    genre: "Alternative",
-  },
-  {
-    id: 6,
-    artist: "BTS",
-    venue: "SoFi Stadium",
-    city: "Los Angeles",
-    date: "2024-08-18",
-    time: "7:00 PM",
-    image: "/BTS.png",
-    price: 249.99,
-    currency: "USDC",
-    tier: "VIP",
-    available: true,
-    genre: "K-Pop",
-  },
-];
+export default async function Home() {
+  const concerts = await getConcerts();
 
-export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       {/* Background effects */}
